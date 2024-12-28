@@ -35,7 +35,8 @@ for xaxis = 1:length(xAxes)
 Nsim = 100;
 for nsim=1:Nsim
 
-rngN = (xaxis-1)*Nsim + nsim; rng(rngN);
+rngN = (xaxis-1)*Nsim + nsim;
+rng('default') ; %rng(rngN);
 disp(' ')
 disp(['SNR',num2str(xAxes(xaxis)),'#Sim : ',num2str(nsim)])
 

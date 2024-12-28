@@ -1,9 +1,7 @@
 function [ Tu,count ] = AP_Gridless( Y,r,K,max_iter,tol,Tu_init,make_plot )
 %Mark Wagner, Dec 31 2019
-%extended Alternating Projection based gridless beamforming (e-APG) for
-%arbitrary array geometry. Given measurements Y, and number of sources K,
-%estimate DOAs. max_iter is maximum number of iterations, tolerance is a
-%break condition calling the function to end angle between subspaces of Tu
+%extended Alternating Projection based gridless beamforming (e-APG) for arbitrary array geometry. Given measurements Y, and number of sources K,
+%estimate DOAs. max_iter is maximum number of iterations, tolerance is a break condition calling the function to end angle between subspaces of Tu
 %and the projection of its extended Vandermonde matrix is low enough.
 
 % M = number of sensors
@@ -46,30 +44,19 @@ if count == 0
     count = max_iter;
 end
 if make_plot
-    figure(3)
-    loglog(abs((Bs)))
-    grid on
-    title('$\| S^{(k)}- S^{(k+1)} \|_F$ vs. Iteration', 'Interpreter','latex')
-    xlabel('Iteration')
-    ylabel('$\| S^{(k)}- S^{(k+1)} \|_F$', 'Interpreter','latex')
-    pause(.01)
+    figure(3);    loglog(abs((Bs)));    grid on;    title('$\| S^{(k)}- S^{(k+1)} \|_F$ vs. Iteration', 'Interpreter','latex');    xlabel('Iteration')
+    ylabel('$\| S^{(k)}- S^{(k+1)} \|_F$', 'Interpreter','latex');    pause(.01);
 end
 end
 
 function Ahat = nearestSPD(A)
 % nearestSPD - the nearest (in Frobenius norm) Symmetric Positive Definite matrix to A
 % usage: Ahat = nearestSPD(A)
-%
-% From Higham: "The nearest symmetric positive semidefinite matrix in the
-% Frobenius norm to an arbitrary real matrix A is shown to be (B + H)/2,
+% From Higham: "The nearest symmetric positive semidefinite matrix in the Frobenius norm to an arbitrary real matrix A is shown to be (B + H)/2,
 % where H is the symmetric polar factor of B=(A + A')/2."
-%
 % http://www.sciencedirect.com/science/article/pii/0024379588902236
-%
 % arguments: (input)
-%  A - square matrix, which will be converted to the nearest Symmetric
-%    Positive Definite Matrix.
-%
+%  A - square matrix, which will be converted to the nearest Symmetric Positive Definite Matrix.
 % Arguments: (output)
 %  Ahat - The matrix chosen as the nearest SPD matrix to A.
 if nargin ~= 1
@@ -86,25 +73,23 @@ elseif (r == 1) && (A <= 0)
 end
 % symmetrize A into B
 B = (A + A')/2;
-% Compute the symmetric polar factor of B. Call it H.
-% Clearly H is itself SPD.
+% Compute the symmetric polar factor of B. Call it H. Clearly H is itself SPD.
 [~,Sigma,V] = svd(B);
 H = V*Sigma*V';
+% sum(sum(abs(V*Sigma*V'-B)))
+% [U1,Sigma1,V1] = svd(B);
+% sum(sum(abs(U1*Sigma*V1'-B)))
+% sum(sum(abs(V1-V)))
 % get Ahat in the above formula
 Ahat = (B+H)/2;
 % ensure symmetry
 Ahat = (Ahat + Ahat')/2;
 % test that Ahat is in fact PD. if it is not so, then tweak it just a bit.
-
-p = 1;
-k = 0;
-count = 0;
+p = 1;k = 0;count = 0;
 while p ~= 0 && count < 10000
-  [R,p] = chol(Ahat);
-  k = k + 1;
+  [R,p] = chol(Ahat);  k = k + 1;
   if p ~= 0
-    % Ahat failed the chol test. It must have been just a hair off,
-    % due to floating point trash, so it is simplest now just to
+    % Ahat failed the chol test. It must have been just a hair off, due to floating point trash, so it is simplest now just to
     % tweak by adding a tiny multiple of an identity matrix.
     mineig = min(eig(Ahat));
     Ahat = Ahat + (-mineig*k.^2 + eps(mineig))*eye(size(A));
@@ -115,13 +100,11 @@ end
 
 function [ Y, V, D ] = ETP(K, r, X )
 %Extended Toeplitz Projection of matrix X
-
 [t_est,c1]          = vandermonde(r, K, X );    %decompose
 alpha_est           = exp(1i*2*pi*t_est);       %reconstruct alpha parameters
 D                   = (diag(c1));               %signal strengths
 V                   = (alpha_est(:).').^r(:);   %reconstruct extended Vandermonde matrix
 Y                   = (V*D*V');                 %reconstruct Tu
-
 end
 
 function [ root_locs, c1 ] = vandermonde( r, K, T )
@@ -149,15 +132,13 @@ if diag(squareform(pdist(r')),1) == ones(M-1,1)
     c1          = real(diag(pinv(W_est)*T*pinv(W_est)'));
     return
 end
-
 %% Find noise subspace
-[U,~,~]         = svd(T);
+[U,~,~]         = svd(T); 
 Un              = U(:,K+1:end);
 G               = Un*Un';
 
 %% Evaluate MUSIC spectrum
-samples                 = 100*(M);
-spacing                 = 180/samples;
+samples                 = 100*(M);spacing                 = 180/samples;
 f                       = -90:spacing:90;
 % f                       = [-90-spacing,f,90+spacing];
 MUSIC_spectrum          = zeros(length(f),1);
@@ -165,7 +146,6 @@ for i = 1:length(f)
     a                   = exp(1i*pi*sind(f(i)).*r');        %steering vector
     MUSIC_spectrum(i)   = -abs((a'*G*a));               %negative null spectrum 
 end
-
 %% find peaks
 [pks,inds]              = findpeaks(MUSIC_spectrum,(1:length(MUSIC_spectrum))); %find the peaks
 [~,id]                  = sort(pks,'descend');
@@ -184,12 +164,8 @@ for i = 1:length(root_locs)                                                     
 end      
 rl_rad                  = root_locs_refined/180*pi;
 root_locs               = sort(sin(rl_rad)/2);
-
 %% Reconstruct
-
 W_est                   = exp(1i*2*pi*root_locs(:).'.*r(:));%regenerate irregular Vandermonde Matrix
 W_inv                   = pinv(W_est);
 c1                      = real(diag(W_inv*T*W_inv'));
-
 end
-

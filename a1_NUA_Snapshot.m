@@ -1,44 +1,33 @@
-% Version 1.0: (05/09/2022)
-% written by Y. Park
-% System framework as defined in Noiselab DOA estimation
-
-% Version 2.0: (06/08/2022)
-% written by Y. Park
-% AP Covariance (JASA 2022)
-
-% Mark Wagner, Yongsung Park, & Peter Gerstoft
-% MPL/SIO/UCSD
-% wagnermark1992@gmail.com / yongsungpark@ucsd.edu / gerstoft@ucsd.edu
-% noiselab.ucsd.edu
+% # Gridless DOA estimation and Root-MUSIC for Non-Uniform Linear Arrays
+%  A set of MATLAB codes for direction-of-arrival (DOA) estimation, beamforming.
+% % -Uniform linear array (ULA) - Signal-to-noise ratio (SNR) performance (root mean square error vs SNR) [a0_ULA_SNR.m]
+% % -ULA - Snapshot performance [a0_ULA_Snapshot.m]
+% % -Non-Uniform linear array (NUA) - SNR performance [a1_NUA_SNR.m]
+% % -NUA - Snapshot performance [a1_NUA_Snapshot.m]
 
 % Citation
 % M. Wagner, Y. Park, and P. Gerstoft, “Gridless DOA estimation and root-MUSIC for non-uniform linear arrays,” IEEE Trans. Signal Process. 69, 2144–2157 (2021).
 % M. Wagner, P. Gerstoft, and Y. Park, “Gridless DOA estimation via alternating projections,” in Proc. IEEE ICASSP (2019), pp. 4215–4219.
 % Y. Park and P. Gerstoft, “Alternating pro jections gridless covariance-based estimation for DOA,” in Proc. IEEE ICASSP (2021), pp. 4385–4389.
 % Y. Park and P. Gerstoft, “Gridless sparse covariance-based beamforming via alternating projections including co-prime arrays,” J. Acoust. Soc. Am. 151(6), 3828-3837 (2022).
-
 %%
-clear; clc; %close all;
+%   [1] H. L. Van Trees, Optimum array processing. New York: Wiley, 2002.
 
+clear all; close all; %clc; %
 addpath([cd,'/_common'])
 errCut = 10; % Maximum RMSE cut-off.
-
 dbstop if error;
-
 % Case: NUA       Multi- snapshot (for NUA, see Line 47-49)
 SNR = 20;
 % anglesTrue = [-65; -2; 3]; % +- .5 Line 73
-
 xAxes = linspace(0.4771,2,6);
 xAxes = round(10.^xAxes); % Number of Snapshots list
 for xaxis = 1:length(xAxes)
 % Number of Monte-Carlo simulations
 Nsim = 100;
 for nsim=1:Nsim
-
-rngN = (xaxis-1)*Nsim + nsim; rng(rngN);
-disp(' ')
-disp(['Number of Snapshots',num2str(xAxes(xaxis)),'#Sim : ',num2str(nsim)])
+rngN = (xaxis-1)*Nsim + nsim; % rng(rngN);
+disp(' '); disp(['Number of Snapshots',num2str(xAxes(xaxis)),'#Sim : ',num2str(nsim)])
 
 % Environment parameters
 c = 1500;       % speed of sound
@@ -55,21 +44,17 @@ qPert = rand(size(q))-.5; qPert(1) = 0; qPert(end) = 0;
 q = q+qPert;
 
 xq = q*d;   % sensor locations
-
 % signal generation parameters
 % SNR = xAxes(xaxis);
 
 % total number of snapshots
 Nsnapshot = xAxes(xaxis);
-
 % range of angle space
 thetalim = [-90 90];
-
 % Angular search grid
 theta_separation = .25;
 theta = (thetalim(1):theta_separation:thetalim(2))';
 Ntheta = length(theta);
-
 % Design/steering matrix (Sensing matrix)
 sin_theta = sind(theta);
 sensingMatrix = exp(-1i*2*pi/lambda*xq*sin_theta.')/sqrt(Nsensor);
@@ -108,13 +93,9 @@ for snapshot = 1:Nsnapshot
     crnl(snapshot) = rnl;
     cX(:,snapshot) = Xsource;
 end
-
-
-%% CRB
-% CRB-YP Van Trees Book Eq.(8.106) & (8.110)
+%% CRB CRB-YP Van Trees Book Eq.(8.106) & (8.110)
 vanTreeV = exp( -1i*2*pi/lambda*xq*sinAnglesTracks(:,snapshot).' );
-vanTreeD = (-1i*2*pi/lambda*xq*cosd(anglesTracks(:,snapshot)).') ...
-    .* exp( -1i*2*pi/lambda*xq*sinAnglesTracks(:,snapshot).' ); % D Eq.(8.100)
+vanTreeD = (-1i*2*pi/lambda*xq*cosd(anglesTracks(:,snapshot)).') .* exp( -1i*2*pi/lambda*xq*sinAnglesTracks(:,snapshot).' ); % D Eq.(8.100)
 
 Xs = cX;
 Pn = mean(diag(((e.*sqrt(crnl/crnl(1)))*(e.*sqrt(crnl/crnl(1)))')/Nsnapshot));
@@ -321,3 +302,15 @@ axis([min(xAxes) max(xAxes) min(sqrt(mean(outputsCRBd,2)*180/pi*180/pi)) 1])
 
 %%
 rmpath([cd,'/_common'])
+% Version 1.0: (05/09/2022)
+% written by Y. Park
+% System framework as defined in Noiselab DOA estimation
+
+% Version 2.0: (06/08/2022)
+% written by Y. Park
+% AP Covariance (JASA 2022)
+
+% Mark Wagner, Yongsung Park, & Peter Gerstoft
+% MPL/SIO/UCSD
+% wagnermark1992@gmail.com / yongsungpark@ucsd.edu / gerstoft@ucsd.edu
+% noiselab.ucsd.edu
